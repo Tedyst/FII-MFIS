@@ -1,0 +1,41 @@
+seq(assign(n, 10),
+    seq(assign(sum, 0),
+        seq(assign(i, 1),
+            while_do(lt(i, n),
+                seq(
+                assign(sum, add(sum, i)),
+                assign(i, add(i, 1)))))))
+
+
+
+<seq (assign... * c, r, s> -> <assign(n, 10) * seq(assign(sum, 0)... * c, r, s>
+<assign(n, 10) * seq(assign(sum, 0)... * c, r, s> -> <10 * assign * seq(assign(sum, 0)... * c, n * r, s>
+<10 * assign * seq(assign(sum, 0)... * c, n * r, s> -> <assign * seq(assign(sum, 0)... * c, 10 * n * r, s>
+<assign * seq(assign(sum, 0)... * c, 10 * n * r, s> -> <seq(assign(sum, 0)... * c, r, s[n=10]>
+<seq(assign(sum, 0)... * c, r, s[n=10]> -> <assign(sum, 0) * seq(assign(i, 1)... * c, r, s[n=10]>
+<assign(sum, 0) * seq(assign(i, 1)... * c, r, s[n=10]> -> <0 * assign * seq(assign(i, 1)... * c, sum * r, s[n=10]>
+<0 * assign * seq(assign(i, 1)... * c, sum * r, s[n=10]> -> <assign * seq(assign(i, 1)... * c, 0 * sum * r, s[n=10]>
+<assign * seq(assign(i, 1)... * c, 0 * sum * r, s[n=10]> -> <seq(assign(i, 1)... * c, r, s[n=10, sum=0]>
+<seq(assign(i, 1)... * c, r, s[n=10, sum=0]> -> <assign(i, 1) * while_do(... * c, r, s[n=10, sum=0]>
+<assign(i, 1) * while_do(... * c, r, s[n=10, sum=0]> -> <1 * assign * while_do(... * c, i * r, s[n=10, sum=0]>
+
+
+
+
+We need to add a new non-constant function symbols named if_then, and then we need to add these three transitions:
+CondC: <if_then(B, S) * c, r, s> -> <B * if_then * c, S1 * r, s>
+CondT: <if_then * c, true * S1 * r, s> -> <S1 * c, r, s>
+ContF: <if_then * c, false * S1 * r, s> -> <c, r, s>
+
+
+
+if_then(lt(n, 10), assign(n, 10)) 
+<if_then(lt(n, 10), assign(n, 10)) * nil, nil, s[n=9]> -> <lt(n, 10) * if_then * nil, assign(n, 10) * nil, s[n=9]>
+<lt(n, 10) * if_then * nil, assign(n, 10) * nil, s[n=9]> -> <n * 10 * lt * if_then * nil, assign(n, 10) * nil, s[n=9]>
+<n * 10 * lt * if_then * nil, assign(n, 10) * nil, s[n=9]> -> <10 * lt * if_then * nil, n * assign(n, 10) * nil, s[n=9]>
+<10 * lt * if_then * nil, n * assign(n, 10) * nil, s[n=9]> -> <lt * if_then * nil, 10 * n * assign(n, 10) * nil, s[n=9]>
+<lt * if_then * nil, 10 * n * assign(n, 10) * nil, s[n=9]> -> <if_then * nil, true * assign(n, 10) * nil, s[n=9]>
+<if_then * nil, true * assign(n, 10) * nil, s[n=9]> -> <assign(n, 10) * nil, nil, s[n=9]>
+<assign(n, 10) * nil, nil, s[n=9]> -> <10 * assign * nil, n * nil, s[n=9]>
+<10 * assign * nil, n * nil, s[n=9]> -> <assign * nil, 10 * n * nil, s[n=9]>
+<assign * nil, 10 * n * nil, s[n=9]> -> <nil, nil, s[n=10]>
