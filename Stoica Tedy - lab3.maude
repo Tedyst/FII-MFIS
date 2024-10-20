@@ -1,0 +1,232 @@
+mod IMP-SYNTAX is 
+    protecting INT .
+
+    sort Var .
+    ops n sum i x y z : -> Var .
+
+    sort AExp .
+    subsort Int < AExp .
+    subsort Var < AExp .
+    op add : AExp AExp -> AExp . 
+    op div : AExp AExp -> AExp .
+
+    sort BExp .
+    ops tt ff : -> BExp .
+    op nott : BExp -> BExp .
+    op andd : BExp BExp -> BExp .
+    op ltt : AExp AExp -> BExp .
+
+    sort Stmt .
+    op skip : -> Stmt .
+    op seq : Stmt Stmt -> Stmt .
+    op assign : Var AExp -> Stmt .
+    op ifThenElse : BExp Stmt Stmt -> Stmt .
+    op whileDo : BExp Stmt -> Stmt .
+endm 
+
+mod TEST is 
+    protecting IMP-SYNTAX .
+
+    op sumPgm : -> Stmt .
+    eq sumPgm = seq (
+        assign(n, 100),
+        seq( 
+            assign(i, 1),
+            seq(
+                assign(sum, 0),
+                whileDo(
+                    ltt(i, add(n,1)),
+                    seq(
+                        assign(sum,add(sum, i)),
+                        assign(i, add(i, 1))
+                    )
+                )
+            )
+        )
+    ) .
+endm
+
+mod IMP-TS is
+    protecting TEST .
+
+    --- Control 
+    sort Control .
+    subsort Stmt < Control .
+    subsort AExp < Control .
+    subsort BExp < Control .
+    ops cAdd cDiv cNott cAnd cLtt cSkip cIte cWhile cAssign cIfThenElse : -> Control .
+    op cNil : -> Control .
+    op _#_ : Control Control -> Control [assoc id: cNil] .
+
+    --- Stack 
+    sort Stack .
+    subsort Stmt < Stack .
+    subsort Var < Stack .
+    subsort Int < Stack .
+    subsort BExp < Stack .
+    op sNil : -> Stack .
+    op _$_ : Stack Stack -> Stack [assoc id: sNil] .
+
+    --- Storage/Memory
+    sort Memory .
+    op _|->_ : Var Int -> Memory . 
+    op mNil : -> Memory .
+    op _;_ : Memory Memory -> Memory [assoc id: mNil] .
+
+    --- update
+    var M : Memory .
+    vars X Y : Var .
+    vars N N' : Int .
+    op update : Memory Var Int -> Memory .
+    eq update(mNil, X, N) = (X |-> N) .
+    eq update(((X |-> N') ; M), X, N) = (X |-> N) ; M .
+    ceq update(((Y |-> N') ; M), X, N) = (Y |-> N') ; update(M, X, N) 
+        if X =/= Y .
+    
+    --- lookup
+    op undefined : -> Int .
+    op get : Memory Var -> Int .
+    eq get(mNil, X) = undefined .
+    eq get(((X |-> N) ; M), X) = N .
+    ceq get(((Y |-> N) ; M), X) = get(M, X) if X =/= Y .
+
+
+    --- state
+    sort State .
+    op <_|_|_> : Control Stack Memory -> State .
+
+    var C : Control .
+    var R : Stack .
+    var S : Memory .
+    vars S1 S2 : Stmt .
+    vars E E1 E2 : AExp .
+    var B B1 B2 : BExp .
+    vars N1 N2 : Int .
+    var Bl : Bool .
+    --- transition system
+
+    --- AExp 
+    rl [IntCt] : < N # C | R | S > => < C | N $ R | S > .
+
+    crl [Loc] : < X # C | R | S > => < C | N $ R | S > if N := get(S, X) .
+
+    rl [AddC] : < add(E1, E2) # C | R | S > =>
+                < E1 # E2 # cAdd # C | R | S > .
+
+    rl [Add] : < cAdd # C | N2 $ N1 $ R | S > =>
+               < C | (N2 + N1) $ R | S > .
+
+    --- BExp 
+    rl [LttC] : < ltt(E1, E2) # C | R | S > =>
+                < E1 # E2 # cLtt # C | R | S > .
+
+    crl [Lt-T] : < cLtt # C | N2 $ N1 $ R   | S > =>
+                 < C        | tt $ R | S > if (N1 < N2) .
+    crl [Lt-F] : < cLtt # C | N2 $ N1 $ R   | S > =>
+                 < C        | ff $ R | S > if (N1 >= N2) .
+
+    --- 
+    --- 
+    --- 
+    --- Begin Homework 1
+
+    rl [NotC] : < nott(B) # C | R | S > =>
+                 < B # cNott | R | S > .
+
+    rl [Not-F] : < cNott # C | ff $ R | S > =>
+                  < C | tt $ R | S > . 
+    rl [Not-T] : < cNott # C | tt $ R | S > =>
+                  < C | ff $ R | S > .
+
+    rl [AndC] : < andd(B1, B2) # C | R | S > =>
+                 < B1 # B2 # cAnd # C | R | S > .
+
+    rl [And-TT] : < cAnd # C | tt $ tt $ R | S > =>
+                  < C | tt $ R | S > .
+    rl [And-TF] : < cAnd # C | tt $ ff $ R | S > =>
+                  < C | ff $ R | S > .
+    rl [And-FT] : < cAnd # C | ff $ tt $ R | S > =>
+                  < C | ff $ R | S > .
+    rl [And-FF] : < cAnd # C | ff $ ff $ R | S > =>
+                  < C | ff $ R | S > .
+
+    rl [Skip]: < cSkip # C | R | S > => < C | R | S > .
+
+    rl [ifThenElseC] : < ifThenElse(B1, S1, S2) # C | R | S > => 
+                       < B1 # cIfThenElse # C | S1 $ S2 $ R | S > .
+    rl [ifTheneElse-T] : < cIfThenElse # C | tt $ S1 $ S2 $ R | S > => 
+                         < S1 # C | R | S > .                         
+    rl [ifTheneElse-T] : < cIfThenElse # C | ff $ S1 $ S2 $ R | S > => 
+                         < S2 # C | R | S > .                         
+
+    --- End Homework 1
+    ---
+    ---
+    ---
+
+
+    --- Stmt 
+    rl [AttribC] : < assign(X, E) # C | R     | S > => 
+                  < E # cAssign # C  | X $ R | S > . 
+    rl [Attrib] : < cAssign # C | N $ X $ R | S > =>
+                  < C | R | update(S, X, N) > .
+
+    rl [SeqC] : < seq(S1, S2) # C | R | S > =>
+                < S1 # S2 # C | R | S > .
+
+    rl [WhileC] : < whileDo(B, S1) # C | R | S > =>
+                  < B # cWhile # C | whileDo(B, S1) $ R | S > . 
+
+    rl [While-T] : < cWhile # C | tt $ whileDo(B, S1) $ R | S > =>
+                   < S1 # whileDo(B, S1) # C | R | S > .
+
+    rl [While-F] : < cWhile # C | ff $ whileDo(B, S1) $ R | S > =>
+                   <  C | R | S > .
+
+endm 
+
+
+--- parse in IMP-SYNTAX : n .
+
+--- parse in TEST : sumPgm .
+
+--- parse in IMP-TS : n # 5 # cAdd .
+--- parse in IMP-TS : add(n, 5) # skip .
+
+--- parse in IMP-TS : n $ 5 $ skip .
+
+--- parse in IMP-TS : (n |-> 10) ; (i |-> 0) ; (sum |-> 0) .
+
+--- reduce in IMP-TS : update ( (n |-> 10) ; (i |-> 0) ; (sum |-> 0),
+---                             n , 15 ) .
+
+
+--- reduce in IMP-TS : get ((n |-> 10) ; (i |-> 0) ; (sum |-> 0), n) .
+
+
+--- red in IMP-TS : < sumPgm | sNil | mNil > .
+
+--- rew in IMP-TS : < sumPgm | sNil | mNil > .
+
+--- search in IMP-TS : < sumPgm | sNil | mNil > =>*
+---                    < C:Control | R:Stack | M:Memory > 
+---                    such that I:Int := get(M:Memory, i) /\ I:Int == 7 .
+
+--- search in IMP-TS : < sumPgm | sNil | mNil > =>*
+---                    < C:Control | R:Stack | M:Memory > 
+---                    such that S:Int := get(M:Memory, sum) /\ 
+---                             N:Int := get(M:Memory, n) /\
+---                    2 * S:Int == N:Int * (N:Int + 1) .
+
+
+--- search in IMP-TS : < sumPgm | sNil | mNil > =>*
+---                    < cNil | sNil | M:Memory > 
+---                    such that S:Int := get(M:Memory, sum) /\ 
+---                             N:Int := get(M:Memory, n) /\
+---                    2 * S:Int =/= N:Int * (N:Int + 1) .
+
+
+rew in IMP-TS : < andd(ltt(1, 15), ltt(15, 16)) | sNil | mNil > .
+rew in IMP-TS : < nott(andd(ltt(1, 15), ltt(15, 16))) | sNil | mNil > .
+rew in IMP-TS : < ifThenElse(ltt(1, 15), assign(n, 10), assign(n, 11)) | sNil | mNil > .
+rew in IMP-TS : < ifThenElse(ltt(15, 1), assign(n, 10), assign(n, 11)) | sNil | mNil > .
