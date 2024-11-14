@@ -1,0 +1,61 @@
+1. sp(i := i + 1, i = 0 ∧ n = 2) =
+    ∃v.((i = (i + 1)[v/i]) ^ (i = 0 ^ n = 2)[v/i])=
+    ∃v.(i = v + 1 ^ v = 0 ^ n = 2)=
+    (i = 0 + 1 ^ n = 2) =
+    i=1 ^ n=2
+
+2.  r := 0;
+    k := 0;
+    if i < j 
+    then k := k + 1
+    else skip;
+    if k == 1 and i == j 
+    then r := j + (-i)
+    else r := i + (-j)
+
+
+                                                           r := 0
+                                                             | r = 0
+                                                           k := 0
+                                                             | k = 0 ^ r = 0
+                                                           if i < j 
+                        /                                                                                 \
+                i < j  /                                                                                   \ i >= j
+                      /                                                                                     \
+            k := k + 1                                                                                       skip
+              | k = 1 ^ r = 0 ^ i < j                                                                          | k = 0 ^ r = 0
+            if k == 1 and i == j                                                                             if k == 1 and i == j
+              /                     \                                                                       /                     \
+    k==1 and i==j                    \                                                                     /                       \
+            /                         \                                                                   /                         \
+           /                           \                                                                 /                           \
+          /                             \                                                               /                             \
+        r := j + (-i)                    r := i + (-j)                                          r := j + (-i)                       r := i + (-j)
+         | k = 1 ^ r = j - i ^ i < j      | k = 1 ^ r = i - j ^ i < j                               | k = 1 ^ r = j - i ^ i < j      | k = 1 ^ r = i - j ^ i < j
+         *                                *
+               
+
+
+3. sp(r := 0; k := 0;if i < j   then k := k + 1  else skip; if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), i < j) =
+    sp(k := 0;if i < j   then k := k + 1  else skip; if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), sp(r := 0, i < j)) =
+    sp(k := 0;if i < j   then k := k + 1  else skip; if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), ∃v.(r = 0[v/r] ^ (i < j)[v/r])) =
+    sp(k := 0;if i < j   then k := k + 1  else skip; if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), r = 0 ^ i < j) =
+    sp(if i < j   then k := k + 1  else skip; if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), sp(k := 0, r = 0 ^ i < j)) =
+    sp(if i < j   then k := k + 1  else skip; if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), ∃v. (k = 0[v/k]) ^ (r = 0 ^ i < j)[v/k]) =
+    sp(if i < j   then k := k + 1  else skip; if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), ∃v. k = 0 ^ r = 0 ^ i < j) =
+    sp(if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), sp(if i < j   then k := k + 1  else skip, ∃v. k = 0 ^ r = 0 ^ i < j)) =
+    sp(if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), sp(k := k + 1, k = 0 ^ r = 0 ^ i < j ^ i < j) V sp(skip, ∃v. k = 0 ^ r = 0 ^ i < j ^ ~(i < j))) =
+    sp(if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), sp(k := k + 1, k = 0 ^ r = 0 ^ i < j) V false) =
+    sp(if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), sp(k := k + 1, k = 0 ^ r = 0 ^ i < j)) =
+    sp(if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), ∃v. (k = (k + 1)[v/k]) ^ (k = 0 ^ r = 0 ^ i < j)[v/k]) =
+    sp(if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), ∃v. (k = v + 1 ^ v = 0 ^ r = 0 ^ i < j) =
+    sp(if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), k = 0 + 1 ^ r = 0 ^ i < j) =
+    sp(if k == 1 and i == j    then r := j + (-i)   else r := i + (-j), k = 1 ^ r = 0 ^ i < j) =
+    sp(r := j + (-i), k = 1 ^ r = 0 ^ i < j ^ k == 1 ^ i == j) V sp(r := i - j, k = 1 ^ r = 0 ^ i < j ^ ~(k==1 ^ i==j))=
+    sp(r := i - j, k = 1 ^ r = 0 ^ i < j ^ (k != 1 V i != j))=
+    sp(r := i - j, k = 1 ^ r = 0 ^ i < j ^ i != j)=
+    sp(r := i - j, k = 1 ^ r = 0 ^ i < j ^ i != j)=
+    ∃v. (r = (i - j)[v/r]) ^ (k = 1 ^ r = 0 ^ i < j ^ i != j)[v/r] =
+    ∃v. r = i - j ^ k = 1 ^ v = 0 ^ i < j ^ i != j =
+    r = i - j ^ k = 1 ^ i < j ^ i != j =
+    r = i - j ^ k = 1 ^ i < j
